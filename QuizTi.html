@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz — Tecnologia da Informação</title>
+<style>
+  :root{
+    --bg:#0F1720;
+    --surface:#16212C;
+    --surface-2:#1C2A38;
+    --border:#28394A;
+    --text:#E7EDF3;
+    --muted:#8CA0B3;
+    --accent:#4FD1C5;
+    --warn:#F0A93B;
+    --good:#3DD68C;
+    --bad:#F16565;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;
+  }
+  .app{max-width:640px;margin:0 auto;padding:32px 20px 60px;}
+  .hero h1{font-size:1.6rem;font-weight:700;margin:0 0 8px;letter-spacing:-0.01em;}
+  .hero p{color:var(--muted);margin:0 0 28px;font-size:0.95rem;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;}
+  .hidden{display:none !important;}
+  .filter-group{margin-bottom:18px;}
+  .filter-group h2{font-size:0.8rem;color:var(--muted);font-weight:600;margin:0 0 10px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--muted);
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:0.85rem;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .chip.active{background:rgba(79,209,197,0.12);border-color:var(--accent);color:var(--accent);}
+  .count-label{color:var(--muted);font-size:0.85rem;margin:14px 0 18px;}
+  .btn-primary{
+    background:var(--accent);
+    color:#08201D;
+    border:none;
+    padding:12px 22px;
+    border-radius:8px;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    width:100%;
+  }
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .q-meta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:0.8rem;margin-bottom:10px;}
+  .tag{padding:2px 9px;border-radius:999px;border:1px solid var(--border);}
+  .tag.facil{color:var(--good);border-color:var(--good);}
+  .tag.medio{color:var(--warn);border-color:var(--warn);}
+  .tag.dificil{color:var(--bad);border-color:var(--bad);}
+  #q-text{font-size:1.1rem;margin:0 0 18px;line-height:1.4;}
+  .options{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  .opt{
+    text-align:left;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:12px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.92rem;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent);}
+  .opt.correct{border-color:var(--good);background:rgba(61,214,140,0.12);}
+  .opt.wrong{border-color:var(--bad);background:rgba(241,101,101,0.12);}
+  .opt:disabled{cursor:default;}
+  .feedback{border-left:3px solid var(--accent);padding:12px 14px;background:var(--surface-2);border-radius:0 8px 8px 0;font-size:0.9rem;margin-bottom:16px;}
+  .feedback.pegadinha{border-left-color:var(--warn);}
+  .feedback .fb-title{font-weight:700;margin-bottom:4px;}
+  .progress-track{height:5px;background:var(--surface-2);border-radius:99px;margin-bottom:18px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--accent);width:0%;transition:width .25s ease;}
+  .score-big{font-size:2.4rem;font-weight:700;color:var(--accent);margin:6px 0 22px;}
+  .breakdown-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:0.9rem;}
+  .breakdown-row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <h1>Quiz — Tecnologia da Informação</h1>
+    <p>Tecnologias Logísticas, Ecossistemas de TI e Introdução ao Excel — baseado no resumo das Aulas 1, 3 e 4.</p>
+  </header>
+
+  <section id="setup" class="panel">
+    <div class="filter-group">
+      <h2>Aulas</h2>
+      <div class="chip-row" id="aula-filters">
+        <button class="chip active" data-aula="Aula 1">Aula 1 · TI e Logística</button>
+        <button class="chip active" data-aula="Aula 3">Aula 3 · Ecossistemas de TI</button>
+        <button class="chip active" data-aula="Aula 4">Aula 4 · Excel</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <h2>Dificuldade</h2>
+      <div class="chip-row" id="dif-filters">
+        <button class="chip active" data-dif="facil">Fácil</button>
+        <button class="chip active" data-dif="medio">Médio</button>
+        <button class="chip active" data-dif="dificil">Pegadinha</button>
+      </div>
+    </div>
+    <p class="count-label" id="count-label"></p>
+    <button class="btn-primary" id="start-btn">Iniciar quiz</button>
+  </section>
+
+  <section id="quiz" class="panel hidden">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="q-meta" id="q-meta"></div>
+    <h2 id="q-text"></h2>
+    <div class="options" id="q-options"></div>
+    <div class="feedback hidden" id="feedback"></div>
+    <button class="btn-primary hidden" id="next-btn">Próxima pergunta</button>
+  </section>
+
+  <section id="results" class="panel hidden">
+    <h2>Resultado</h2>
+    <p class="score-big" id="score-big"></p>
+    <div id="breakdown"></div>
+    <button class="btn-primary" id="restart-btn">Refazer quiz</button>
+  </section>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  // AULA 1 — Tecnologias Logísticas
+  {aula:"Aula 1",dif:"facil",pergunta:"Quantos níveis formam a pirâmide de Sistemas de Informação (SIs) apresentada na aula?",
+   opcoes:["2","3","4","5"],correta:1,
+   explicacao:"Os SIs são organizados em uma pirâmide de três níveis: Estratégico, Tático e Operacional."},
+  {aula:"Aula 1",dif:"facil",pergunta:"O que significa a sigla B2C no comércio eletrônico?",
+   opcoes:["Business-to-Business","Business-to-Consumer","Consumer-to-Consumer","Business-to-Government"],correta:1,
+   explicacao:"B2C é Business-to-Consumer: venda direta da empresa ao consumidor final, como comprar uma roupa em uma loja online."},
+  {aula:"Aula 1",dif:"facil",pergunta:"O que é o VMI (Vendor Managed Inventory)?",
+   opcoes:["Um modelo em que o fornecedor gerencia e reabastece o estoque do cliente","Um sistema de troca automatizada de documentos entre empresas","Um portal que une compradores e vendedores","Um software de gestão integrada de vendas e RH"],correta:0,
+   explicacao:"VMI é o Estoque Gerido pelo Fornecedor: o fornecedor assume a responsabilidade de gerenciar e reabastecer o estoque do cliente."},
+  {aula:"Aula 1",dif:"medio",pergunta:"No nível tático da pirâmide de Sistemas de Informação (exemplo: vendas e estoques), quais sistemas são usados?",
+   opcoes:["Sistemas de apoio ao executivo (SAE)","Sistemas de apoio à decisão (SAD) e Sistemas de informações gerenciais (SIG)","Sistemas de processamento de transações (SPT)","Sistemas de Comércio Eletrônico (CE)"],correta:1,
+   explicacao:"No nível tático ficam o SAD e o SIG, com exemplo de aplicação em vendas e estoques."},
+  {aula:"Aula 1",dif:"medio",pergunta:"O que é o E-procurement?",
+   opcoes:["A troca automatizada de documentos entre sistemas de empresas parceiras","A compra e venda entre empresas de suprimentos e serviços pela Internet","Um portal neutro que une compradores e vendedores","O comércio direto entre dois consumidores finais"],correta:1,
+   explicacao:"E-procurement é a aquisição eletrônica: a empresa envia sua intenção de compra a uma rede de fornecedores, que respondem com orçamentos."},
+  {aula:"Aula 1",dif:"medio",pergunta:"Quais são as três áreas principais do E-business citadas na aula?",
+   opcoes:["CRM, ERP e EDI","B2B, B2C e C2C","SAE, SAD e SPT","WMS, GIS e DRP"],correta:0,
+   explicacao:"As principais áreas do e-business são o CRM (relacionamento), o ERP (gestão integrada) e o EDI (troca de documentos)."},
+  {aula:"Aula 1",dif:"dificil",pergunta:"B2B, B2C e C2C são formas de comércio eletrônico. Qual a diferença correta entre elas?",
+   opcoes:["B2B é empresa-empresa, B2C é empresa-consumidor final, C2C é consumidor-consumidor via plataforma","B2B é empresa-consumidor, B2C é empresa-empresa, C2C é governo-empresa","As três significam a mesma coisa, mudando apenas o nome","B2C é sempre feito por meio de plataformas como OLX e Enjoei"],correta:0,
+   explicacao:"Pegadinha clássica: B2B é entre duas empresas, B2C é da empresa ao consumidor final, e C2C é entre dois consumidores, geralmente intermediado por uma plataforma (como OLX ou Enjoei)."},
+  {aula:"Aula 1",dif:"dificil",pergunta:"Qual a diferença entre E-commerce (CE) e E-business?",
+   opcoes:["São sinônimos e podem ser usados sem distinção","O CE é a transação eletrônica de compra e venda; o e-business também inclui aplicações internas e de integração da cadeia","O e-business é só a parte de marketing do CE","O CE inclui CRM, ERP e EDI; o e-business é apenas a loja virtual"],correta:1,
+   explicacao:"O CE é a compra e venda eletrônica; o e-business é a evolução do CE, incluindo também aplicações internas e de integração, como CRM, ERP e EDI."},
+
+  // AULA 3 — Ecossistemas de TI Empresarial
+  {aula:"Aula 3",dif:"facil",pergunta:"Quantos componentes formam o ecossistema de TI empresarial apresentado na aula?",
+   opcoes:["5","6","7","8"],correta:2,
+   explicacao:"São sete componentes: infraestrutura de dados, parque tecnológico, conectividade, comunicação, web e redes sociais, segurança patrimonial e proteção da informação."},
+  {aula:"Aula 3",dif:"facil",pergunta:"O que é um Data Center (CPD)?",
+   opcoes:["Um software de gestão de estoques","O local físico que abriga servidores, racks e redes para armazenar e processar dados","Um tipo de rede sem fio","Um sistema de segurança patrimonial"],correta:1,
+   explicacao:"O Data Center é o local físico que abriga servidores, racks, redes e SIGs para armazenar, processar e distribuir grandes volumes de informações digitais."},
+  {aula:"Aula 3",dif:"facil",pergunta:"Qual lei regulamenta a proteção de dados pessoais no Brasil, citada na aula?",
+   opcoes:["Marco Civil da Internet","LGPD (Lei nº 13.709/2018)","Código de Defesa do Consumidor","Lei de Acesso à Informação"],correta:1,
+   explicacao:"A LGPD (Lei Geral de Proteção de Dados Pessoais, Lei nº 13.709/2018) regulamenta a coleta, uso, armazenamento e compartilhamento de dados pessoais."},
+  {aula:"Aula 3",dif:"medio",pergunta:"Quais são os quatro tipos de Data Center mencionados na aula?",
+   opcoes:["Enterprise, Colocation, Hyperscale e Edge","Local, Rede, Nuvem e Híbrido","SAE, SAD, SIG e SPT","Público, Privado, Comunitário e Híbrido"],correta:0,
+   explicacao:"Os quatro tipos são: Enterprise (uso exclusivo), Colocation (espaço compartilhado), Hyperscale (escala global de nuvem) e Edge (mais perto do usuário)."},
+  {aula:"Aula 3",dif:"medio",pergunta:"O que significa a sigla POE, usada em cabeamento de rede?",
+   opcoes:["Power over Ethernet — transmite energia e dados pelo mesmo cabo de rede","Protocol over Ethernet — um protocolo de segurança de rede","Point of Exchange — um tipo de switch","Power on Emergency — sistema de energia de backup"],correta:0,
+   explicacao:"POE (Power over Ethernet) transmite energia elétrica e dados de rede ao mesmo tempo, usando apenas um cabo Ethernet/RJ45."},
+  {aula:"Aula 3",dif:"medio",pergunta:"Quantos bits tem o endereçamento IPV4 e quantos endereços ele permite?",
+   opcoes:["32 bits, cerca de 4 bilhões de endereços","64 bits, cerca de 8 bilhões de endereços","128 bits, quase infinitas combinações","16 bits, cerca de 65 mil endereços"],correta:0,
+   explicacao:"O IPV4 tem 32 bits, resultando em cerca de 4 bilhões de endereços (o IPV6, com 128 bits, tem quase infinitas combinações)."},
+  {aula:"Aula 3",dif:"dificil",pergunta:"Qual a diferença entre um nobreak 'online' e um nobreak 'senoidal'?",
+   opcoes:["São o mesmo tipo de equipamento, só muda o nome do fabricante","No online a energia sai da bateria; no senoidal a energia sai pura","O online serve para servidores e o senoidal para computadores comuns","O senoidal só funciona com energia solar"],correta:1,
+   explicacao:"Segundo a aula: no nobreak online a energia sai da bateria; no senoidal a energia sai pura."},
+  {aula:"Aula 3",dif:"dificil",pergunta:"Qual a diferença entre Segurança Patrimonial e Proteção da Informação?",
+   opcoes:["São a mesma coisa, tratada com nomes diferentes","Segurança Patrimonial protege bens físicos e pessoas (CFTV, alarmes); Proteção da Informação protege os dados (backup, antivírus, LGPD)","Segurança Patrimonial cuida só de dados; Proteção da Informação cuida só de câmeras","Proteção da Informação é responsabilidade exclusiva do DPO, sem relação com backup"],correta:1,
+   explicacao:"Segurança Patrimonial protege bens físicos, instalações e pessoas (CFTV, alarmes, controle de acesso); Proteção da Informação protege os dados (backup, antivírus, LGPD)."},
+
+  // AULA 4 — Introdução ao Excel
+  {aula:"Aula 4",dif:"facil",pergunta:"Com qual sinal toda fórmula ou função do Excel deve OBRIGATORIAMENTE começar?",
+   opcoes:["@","=","#","$"],correta:1,
+   explicacao:"Toda fórmula ou função no Excel deve começar com o sinal de igual (=), avisando ao Excel que ele deve calcular."},
+  {aula:"Aula 4",dif:"facil",pergunta:"O que a função =SOMA() faz?",
+   opcoes:["Calcula a média aritmética de um intervalo","Soma todos os valores de um intervalo de células","Testa uma condição lógica","Arredonda casas decimais"],correta:1,
+   explicacao:"=SOMA(célula_inicial:célula_final) soma todos os valores do intervalo indicado."},
+  {aula:"Aula 4",dif:"facil",pergunta:"O que é a Alça de Preenchimento?",
+   opcoes:["Um botão para salvar o arquivo","O pequeno quadrado preto no canto inferior direito da célula, usado para preencher sequências ou copiar conteúdo","A barra de fórmulas no topo da planilha","Um tipo de borda de impressão"],correta:1,
+   explicacao:"A Alça de Preenchimento é o pequeno quadrado preto no canto inferior direito da célula selecionada; arrastá-la continua sequências lógicas ou copia conteúdo."},
+  {aula:"Aula 4",dif:"medio",pergunta:"Ao inserir uma nova coluna clicando com o botão direito sobre uma coluna existente, para que lado ela surge?",
+   opcoes:["À esquerda da coluna selecionada","À direita da coluna selecionada","Sempre na coluna A","No final da planilha"],correta:0,
+   explicacao:"Ao clicar com o botão direito na letra da coluna e escolher Inserir, a nova coluna surge à esquerda (a nova linha surge acima)."},
+  {aula:"Aula 4",dif:"medio",pergunta:"Qual é a sintaxe correta da função =SE()?",
+   opcoes:["=SE(valor_se_verdadeiro; teste_lógico; valor_se_falso)","=SE(teste_lógico; valor_se_verdadeiro; valor_se_falso)","=SE(célula_inicial:célula_final)","=SE(teste_lógico; valor_se_falso)"],correta:1,
+   explicacao:"A sintaxe é =SE(teste_lógico; valor_se_verdadeiro; valor_se_falso). Exemplo: =SE(C2>=7; 'Aprovado'; 'Reprovado')."},
+  {aula:"Aula 4",dif:"medio",pergunta:"O que a opção 'Salvar Como' faz, diferente de 'Salvar'?",
+   opcoes:["Também atualiza o arquivo atual, sem diferença prática","Cria uma nova cópia do arquivo, podendo mudar nome, pasta ou formato","Apaga o arquivo original","Só funciona para arquivos em PDF"],correta:1,
+   explicacao:"Salvar (Ctrl+B) atualiza o arquivo existente; Salvar Como cria uma nova cópia, permitindo alterar nome, pasta de destino ou formato."},
+  {aula:"Aula 4",dif:"dificil",pergunta:"Um número digitado como 'Texto' no Excel pode ser usado em uma fórmula de soma normalmente?",
+   opcoes:["Sim, o Excel calcula normalmente, só muda o alinhamento","Não — como Texto, mesmo que sejam dígitos, não é possível fazer contas com eles","Sim, mas apenas se estiver na coluna A","Não, porque Texto não pode ser digitado em planilhas"],correta:1,
+   explicacao:"Quando o tipo de dado é Texto, o valor é tratado como palavra e alinhado à esquerda — mesmo que sejam números, não é possível fazer contas com eles."},
+  {aula:"Aula 4",dif:"dificil",pergunta:"Diminuir as casas decimais de um número (ex: de 10,567 para 10,57) altera o valor real armazenado na célula?",
+   opcoes:["Sim, o valor é arredondado permanentemente","Não, é apenas uma mudança visual — o valor real do número permanece o mesmo","Depende do formato de moeda escolhido","Sim, mas só se a célula estiver formatada como Número"],correta:1,
+   explicacao:"Diminuir casas decimais arredonda apenas a exibição; o valor real do número na célula permanece inalterado."}
+];
+
+const DIF_LABEL = {facil:"Fácil", medio:"Médio", dificil:"Pegadinha"};
+
+let selectedAulas = new Set(["Aula 1","Aula 3","Aula 4"]);
+let selectedDifs = new Set(["facil","medio","dificil"]);
+let pool = [];
+let idx = 0;
+let answers = [];
+
+const countLabel = document.getElementById("count-label");
+const startBtn = document.getElementById("start-btn");
+
+function updateCount(){
+  const n = QUESTIONS.filter(q => selectedAulas.has(q.aula) && selectedDifs.has(q.dif)).length;
+  countLabel.textContent = n + (n === 1 ? " pergunta selecionada" : " perguntas selecionadas");
+  startBtn.disabled = n === 0;
+}
+
+document.querySelectorAll("#aula-filters .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const val = chip.dataset.aula;
+    if(selectedAulas.has(val)){ selectedAulas.delete(val); chip.classList.remove("active"); }
+    else { selectedAulas.add(val); chip.classList.add("active"); }
+    updateCount();
+  });
+});
+document.querySelectorAll("#dif-filters .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const val = chip.dataset.dif;
+    if(selectedDifs.has(val)){ selectedDifs.delete(val); chip.classList.remove("active"); }
+    else { selectedDifs.add(val); chip.classList.add("active"); }
+    updateCount();
+  });
+});
+updateCount();
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+startBtn.addEventListener("click", () => {
+  pool = shuffle(QUESTIONS.filter(q => selectedAulas.has(q.aula) && selectedDifs.has(q.dif)));
+  idx = 0;
+  answers = [];
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  showQuestion();
+});
+
+function showQuestion(){
+  const q = pool[idx];
+  document.getElementById("progress-fill").style.width = ((idx) / pool.length * 100) + "%";
+  document.getElementById("q-meta").innerHTML =
+    '<span>' + q.aula + '</span><span class="tag ' + q.dif + '">' + DIF_LABEL[q.dif] + '</span>' +
+    '<span>Pergunta ' + (idx + 1) + ' de ' + pool.length + '</span>';
+  document.getElementById("q-text").textContent = q.pergunta;
+
+  const optsDiv = document.getElementById("q-options");
+  optsDiv.innerHTML = "";
+  q.opcoes.forEach((op, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.textContent = op;
+    btn.addEventListener("click", () => selectOption(i));
+    optsDiv.appendChild(btn);
+  });
+
+  document.getElementById("feedback").classList.add("hidden");
+  document.getElementById("next-btn").classList.add("hidden");
+}
+
+function selectOption(choice){
+  const q = pool[idx];
+  const isCorrect = choice === q.correta;
+  const optButtons = document.querySelectorAll("#q-options .opt");
+  optButtons.forEach((btn, i) => {
+    btn.disabled = true;
+    if(i === q.correta) btn.classList.add("correct");
+    else if(i === choice) btn.classList.add("wrong");
+  });
+
+  const fb = document.getElementById("feedback");
+  fb.classList.remove("hidden");
+  fb.classList.toggle("pegadinha", q.dif === "dificil");
+  fb.innerHTML = '<div class="fb-title">' + (isCorrect ? "Certo!" : "Errado.") + '</div>' + q.explicacao;
+
+  document.getElementById("next-btn").classList.remove("hidden");
+  answers.push({aula: q.aula, dif: q.dif, correct: isCorrect});
+}
+
+document.getElementById("next-btn").addEventListener("click", () => {
+  idx++;
+  if(idx < pool.length){
+    showQuestion();
+  } else {
+    document.getElementById("progress-fill").style.width = "100%";
+    showResults();
+  }
+});
+
+function showResults(){
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("results").classList.remove("hidden");
+
+  const total = answers.length;
+  const acertos = answers.filter(a => a.correct).length;
+  document.getElementById("score-big").textContent = acertos + " / " + total;
+
+  const aulas = ["Aula 1","Aula 3","Aula 4"];
+  let html = "";
+  aulas.forEach(a => {
+    const doAula = answers.filter(x => x.aula === a);
+    if(doAula.length === 0) return;
+    const certasAula = doAula.filter(x => x.correct).length;
+    html += '<div class="breakdown-row"><span>' + a + '</span><span>' + certasAula + ' / ' + doAula.length + '</span></div>';
+  });
+  const pegadinhas = answers.filter(x => x.dif === "dificil");
+  if(pegadinhas.length > 0){
+    const certasPeg = pegadinhas.filter(x => x.correct).length;
+    html += '<div class="breakdown-row"><span>Pegadinhas</span><span>' + certasPeg + ' / ' + pegadinhas.length + '</span></div>';
+  }
+  document.getElementById("breakdown").innerHTML = html;
+}
+
+document.getElementById("restart-btn").addEventListener("click", () => {
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("setup").classList.remove("hidden");
+});
+</script>
+</body>
+</html>
